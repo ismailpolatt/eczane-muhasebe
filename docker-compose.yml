@@ -1,0 +1,9 @@
+services:
+  eczane:
+    build: .
+    container_name: eczane-muhasebe
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

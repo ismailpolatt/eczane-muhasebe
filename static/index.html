@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eczane Muhasebe</title>
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:        #f1f5f9;
+  --surface:   #ffffff;
+  --border:    #e2e8f0;
+  --text:      #1e293b;
+  --muted:     #64748b;
+  --primary:   #1e40af;
+  --primary-h: #1d4ed8;
+  --success:   #15803d;
+  --success-h: #166534;
+  --amber:     #b45309;
+  --amber-h:   #92400e;
+  --danger:    #b91c1c;
+  --neutral:   #475569;
+  --neutral-h: #334155;
+
+  --h1-bg:  #0f2044;
+  --h2-bg:  #1e3a6e;
+  --banka:  #064e3b;
+  --banka2: #065f46;
+  --nakit:  #1e3a6e;
+  --nakit2: #1e40af;
+  --iade:   #7c2d12;
+  --iade2:  #9a3412;
+  --tahsil: #4c1d95;
+  --tahsil2:#6d28d9;
+  --tot-bg: #0f2044;
+  --rx-bg:  #eff6ff;
+  --calc-bg:#f8fafc;
+
+  --fark-pos-bg:  #dcfce7; --fark-pos-txt: #14532d;
+  --fark-neg-bg:  #fee2e2; --fark-neg-txt: #7f1d1d;
+
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.06);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,.14);
+}
+
+html { scroll-behavior: smooth; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+/* ── Header ── */
+.app-header {
+  background: linear-gradient(135deg, #0f2044 0%, #1e3a6e 100%);
+  color: #fff; padding: 0 20px;
+  height: 56px; display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+.header-icon { font-size: 1.4rem; }
+.header-title { font-size: 1.05rem; font-weight: 700; letter-spacing: -.3px; }
+.header-title span { opacity: .65; font-weight: 400; font-size: .85rem; margin-left: 6px; }
+.save-pill {
+  margin-left: auto; font-size: .75rem; padding: 3px 10px; border-radius: 20px;
+  background: rgba(255,255,255,.12); color: rgba(255,255,255,.8);
+  transition: all .3s; white-space: nowrap;
+}
+.save-pill.saving  { background: rgba(251,191,36,.2); color: #fde68a; }
+.save-pill.saved   { background: rgba(34,197,94,.2);  color: #86efac; }
+.save-pill.error   { background: rgba(239,68,68,.2);  color: #fca5a5; }
+
+/* ── Controls ── */
+.controls {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 10px 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.ctrl-group { display: flex; align-items: center; gap: 6px; }
+.ctrl-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+label.lbl { font-size: .8rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+select.sel, input.inp-num {
+  height: 34px; border: 1.5px solid var(--border); border-radius: 6px;
+  padding: 0 10px; font-size: .85rem; color: var(--text);
+  background: #fff; transition: border-color .15s;
+}
+select.sel:focus, input.inp-num:focus { outline: none; border-color: var(--primary); }
+input.inp-num { width: 76px; }
+
+.month-badge {
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  color: #fff; padding: 4px 12px; border-radius: 20px;
+  font-size: .82rem; font-weight: 700; white-space: nowrap;
+}
+
+.spacer { flex: 1; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 34px; padding: 0 14px; border: none; border-radius: 7px;
+  font-size: .83rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: background .15s, transform .1s, box-shadow .15s;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-h); box-shadow: 0 2px 8px rgba(30,64,175,.35); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: var(--success-h); box-shadow: 0 2px 8px rgba(21,128,61,.35); }
+.btn-amber   { background: var(--amber); color: #fff; }
+.btn-amber:hover { background: var(--amber-h); box-shadow: 0 2px 8px rgba(180,83,9,.35); }
+.btn-neutral { background: var(--neutral); color: #fff; }
+.btn-neutral:hover { background: var(--neutral-h); }
+.btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+/* ── Scroll hint ── */
+.scroll-hint {
+  display: none; text-align: center; font-size: .75rem; color: var(--muted);
+  padding: 4px 0; background: var(--bg);
+}
+@media (max-width: 900px) { .scroll-hint { display: block; } }
+
+/* ── Table wrapper ── */
+.table-wrapper {
+  overflow: auto; padding: 12px;
+  max-height: calc(100vh - 56px - 55px - 28px);
+}
+.table-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
+.table-wrapper::-webkit-scrollbar-track { background: transparent; }
+.table-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* ── Main table ── */
+.main-table {
+  border-collapse: separate; border-spacing: 0;
+  min-width: 1500px; background: var(--surface);
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.main-table th, .main-table td {
+  border-right: 1px solid rgba(255,255,255,.12);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  padding: 5px 7px; white-space: nowrap;
+}
+.main-table tbody td, .main-table tfoot td {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Sticky header */
+.main-table thead th {
+  position: sticky; top: 0; z-index: 30;
+  font-size: .73rem; font-weight: 700; text-align: center; letter-spacing: .3px;
+}
+.main-table thead tr:nth-child(2) th { top: 33px; z-index: 29; }
+
+/* Sticky column */
+.sticky-col { position: sticky; left: 0; z-index: 25 !important; background: inherit; }
+.main-table thead .sticky-col { z-index: 35 !important; }
+.main-table tfoot .sticky-col { z-index: 25 !important; }
+
+/* Header group colors */
+th.h-base    { background: var(--h1-bg); color: #e2e8f0; }
+th.h-banka   { background: var(--banka);  color: #d1fae5; }
+th.h-banka2  { background: var(--banka2); color: #d1fae5; }
+th.h-nakit   { background: var(--nakit);  color: #bfdbfe; }
+th.h-nakit2  { background: var(--nakit2); color: #bfdbfe; }
+th.h-iade    { background: var(--iade);   color: #fed7aa; }
+th.h-iade2   { background: var(--iade2);  color: #fed7aa; }
+th.h-tahsil  { background: var(--tahsil); color: #ede9fe; }
+th.h-tahsil2 { background: var(--tahsil2);color: #ede9fe; }
+th.h-rx      { background: var(--h1-bg);  color: #e2e8f0; }
+th.h-fark    { background: var(--h2-bg);  color: #e2e8f0; }
+
+/* Data rows */
+.main-table tbody tr { background: #fff; transition: background .1s; }
+.main-table tbody tr:hover  { background: #f8faff; }
+.main-table tbody tr.even   { background: #fafbfc; }
+.main-table tbody tr.even:hover { background: #f5f8ff; }
+.main-table tbody tr.weekend { background: #f5f5f5; }
+.main-table tbody tr.weekend:hover { background: #eeeeee; }
+.main-table tbody tr.holiday { background: #fffbeb; }
+.main-table tbody tr.holiday:hover { background: #fef3c7; }
+
+/* Cell types */
+.date-cell  { text-align: center; font-weight: 600; font-size: .76rem; min-width: 82px; color: var(--text); background: inherit; }
+.calc-cell  { text-align: right; font-size: .76rem; color: #334155; background: var(--calc-bg); min-width: 88px; }
+.rx-inp-cell { background: var(--rx-bg); }
+.tahsilat-active { background: #dcfce7 !important; }
+.tahsilat-active input { background: #dcfce7; }
+.iade-active { background: #fef3c7 !important; }
+.iade-active input { background: #fef3c7; }
+.iban-active { background: #dcfce7 !important; }
+.iban-active input { background: #dcfce7; }
+.input-cell { padding: 0; min-width: 80px; }
+
+/* FARK cells */
+.fark-cell  { text-align: right; font-size: .76rem; min-width: 88px; font-weight: 600; }
+.fark-pos   { background: var(--fark-pos-bg); color: var(--fark-pos-txt); }
+.fark-neg   { background: var(--fark-neg-bg); color: var(--fark-neg-txt); }
+.fark-zero  { color: var(--muted); }
+
+/* Inputs inside cells */
+.num-input {
+  width: 100%; height: 100%; min-height: 32px;
+  border: none; background: transparent; text-align: right;
+  font-size: .76rem; font-family: inherit; padding: 4px 7px;
+  outline: none; color: inherit;
+}
+.num-input:focus {
+  background: #fffde7; box-shadow: inset 0 0 0 2px #fbbf24;
+  border-radius: 3px;
+}
+.notes-input {
+  width: 100%; min-height: 32px; min-width: 180px;
+  border: none; background: transparent; font-size: .76rem;
+  font-family: inherit; padding: 4px 7px; outline: none; color: inherit;
+  resize: none; overflow: hidden; line-height: 1.4;
+  white-space: pre-wrap; word-break: break-word;
+  vertical-align: top; display: block;
+}
+.notes-input:focus { background: #fffde7; border-radius: 3px; }
+/* NOT hücresi metni sarsın, satır içeriğe göre uzasın */
+.main-table tbody td.notes-cell { white-space: normal; vertical-align: top; }
+
+/* Total / foot row */
+.main-table tfoot .total-row td {
+  background: var(--tot-bg); color: #e2e8f0;
+  font-weight: 700; font-size: .76rem; text-align: right;
+  border-color: #1e3a6e;
+}
+.main-table tfoot .total-row .sticky-col { text-align: center; color: #fff; }
+.main-table tfoot .total-row .fark-pos { background: #166534; color: #bbf7d0; }
+.main-table tfoot .total-row .fark-neg { background: #7f1d1d; color: #fecaca; }
+.main-table tfoot .total-row .fark-zero { background: #1e3a6e; color: #94a3b8; }
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,20,40,.6); backdrop-filter: blur(4px);
+  z-index: 500; display: flex; align-items: center; justify-content: center;
+  animation: fadeIn .2s ease;
+}
+.modal-overlay[hidden] { display: none; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--surface); border-radius: 14px;
+  padding: 28px 32px; width: min(480px, 92vw);
+  box-shadow: var(--shadow-lg); animation: slideUp .22s ease;
+}
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.modal-header { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+.modal-header h2 { font-size: 1.05rem; font-weight: 700; color: var(--text); }
+.modal-icon { width: 36px; height: 36px; border-radius: 8px; background: #eff6ff; display: flex; align-items: center; justify-content: center; }
+
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: .8rem; font-weight: 600; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .4px; }
+.form-group select {
+  width: 100%; height: 38px; border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 0 10px; font-size: .88rem; color: var(--text); background: #fff; transition: border-color .15s;
+}
+.form-group select:focus { outline: none; border-color: var(--primary); }
+.file-label {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border: 2px dashed var(--border); border-radius: 8px; cursor: pointer;
+  transition: border-color .15s, background .15s; font-size: .85rem; color: var(--muted);
+}
+.file-label:hover { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+.file-label input[type="file"] { display: none; }
+.file-name { font-size: .8rem; color: var(--muted); margin-top: 4px; }
+
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+.divider { height: 1px; background: var(--border); margin: 18px 0; }
+
+/* Gün gizleme */
+.date-cell .date-lbl { margin-right: 4px; }
+.hide-btn {
+  border: none; background: transparent; cursor: pointer;
+  color: #94a3b8; font-size: .85rem; line-height: 1; padding: 1px 4px;
+  border-radius: 4px; transition: all .12s;
+}
+.hide-btn:hover { background: #fee2e2; color: #b91c1c; }
+.hide-btn.unhide:hover { background: #dcfce7; color: #15803d; }
+.hide-tag {
+  font-size: .62rem; color: #94a3b8; background: #f1f5f9;
+  border-radius: 4px; padding: 1px 5px; vertical-align: middle;
+}
+.main-table tbody tr.row-hidden { opacity: .45; }
+.main-table tbody tr.row-hidden .date-lbl { text-decoration: line-through; }
+
+.weekday-toggles { display: flex; gap: 6px; flex-wrap: wrap; }
+.wd-toggle {
+  flex: 1; min-width: 44px; height: 38px; border: 1.5px solid var(--border);
+  border-radius: 8px; background: #fff; cursor: pointer;
+  font-size: .82rem; font-weight: 600; color: var(--muted); transition: all .12s;
+}
+.wd-toggle:hover { border-color: var(--primary); }
+.wd-toggle.on {
+  background: var(--iade); border-color: var(--iade); color: #fff;
+}
+
+/* Formula list */
+.formula-list { display: flex; flex-direction: column; gap: 8px; }
+.formula-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 12px; border-radius: 8px; background: #f8fafc;
+  border: 1px solid var(--border);
+}
+.formula-name {
+  flex-shrink: 0; width: 120px; font-size: .76rem; font-weight: 700;
+  color: var(--primary); letter-spacing: .3px;
+}
+.formula-row code {
+  font-family: 'Consolas', 'Monaco', monospace; font-size: .8rem;
+  color: var(--text); background: #fff; padding: 4px 8px; border-radius: 5px;
+  border: 1px solid var(--border); flex: 1;
+}
+
+/* ── Toast ── */
+.toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 600; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-radius: 10px; min-width: 240px; max-width: 340px;
+  font-size: .85rem; font-weight: 500; color: #fff;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2); animation: toastIn .25s ease;
+}
+.toast.hidden { display: none; }
+@keyframes toastIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.toast.success { background: #15803d; }
+.toast.error   { background: #b91c1c; }
+.toast.info    { background: #1e40af; }
+.toast-icon { font-size: 1rem; }
+
+/* ── Loading ── */
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(255,255,255,.75); backdrop-filter: blur(2px);
+  z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+}
+.loading-overlay[hidden] { display: none; }
+.spinner {
+  width: 38px; height: 38px; border: 4px solid #e2e8f0;
+  border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: .9rem; color: var(--muted); font-weight: 500; }
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .controls { padding: 8px 12px; gap: 6px; }
+  .ctrl-sep { display: none; }
+  .header-title span { display: none; }
+  .btn { height: 36px; padding: 0 12px; font-size: .8rem; }
+  .num-input, .notes-input { min-height: 36px; font-size: .8rem; }
+  .modal { padding: 22px 18px; }
+  .spacer-mobile { flex-basis: 100%; height: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="app-header">
+  <span class="header-icon">💊</span>
+  <div class="header-title">
+    Eczane Muhasebe
+    <span>Günlük Kasa Mutabakat</span>
+  </div>
+  <div class="save-pill" id="savePill"></div>
+</header>
+
+<!-- Controls -->
+<div class="controls">
+  <div class="ctrl-group">
+    <label class="lbl">Ay</label>
+    <select class="sel" id="monthSelect">
+      <option value="1">Ocak</option><option value="2">Şubat</option>
+      <option value="3">Mart</option><option value="4">Nisan</option>
+      <option value="5">Mayıs</option><option value="6">Haziran</option>
+      <option value="7">Temmuz</option><option value="8">Ağustos</option>
+      <option value="9">Eylül</option><option value="10">Ekim</option>
+      <option value="11">Kasım</option><option value="12">Aralık</option>
+    </select>
+    <label class="lbl">Yıl</label>
+    <input class="inp-num" type="number" id="yearInput" min="2020" max="2099">
+    <button class="btn btn-primary" onclick="loadMonth()">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+      Yükle
+    </button>
+  </div>
+  <div class="ctrl-group">
+    <span class="month-badge" id="monthLabel"></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="ctrl-group">
+    <div class="ctrl-sep"></div>
+    <button class="btn btn-amber" onclick="openRxEysModal()">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+      RxEys Yükle
+    </button>
+    <label class="btn btn-amber" title="RxEys .back yedek dosyasını içe aktar" style="cursor:pointer;margin:0;">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:15px;height:15px"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+      .back Yükle
+      <input type="file" accept=".back" style="display:none" onchange="importBackFile(this)">
+    </label>
+    <button class="btn btn-neutral" onclick="openWatcherModal()" title="Otomatik senkronizasyon ayarları" id="watcherBtn">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:15px;height:15px"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+      Otomatik
+      <span id="watcherDot" style="width:8px;height:8px;border-radius:50%;background:#6b7280;display:inline-block;margin-left:2px;"></span>
+    </button>
+    <button class="btn btn-neutral" onclick="openHideModal()" title="Gün gizleme ayarları">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:15px;height:15px"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+      Gizle
+    </button>
+    <button class="btn btn-neutral" onclick="openFormulaModal()" title="Hesaplama formüllerini göster">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:15px;height:15px"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+      Formüller
+    </button>
+    <button class="btn btn-success" onclick="exportExcel()">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+      Excel İndir
+    </button>
+  </div>
+</div>
+
+<!-- Scroll hint for mobile -->
+<div class="scroll-hint">← Tabloyu kaydırarak görebilirsiniz →</div>
+
+<!-- Table -->
+<div class="table-wrapper">
+<table class="main-table">
+<thead>
+  <tr>
+    <th rowspan="2" class="sticky-col h-base" style="min-width:82px">TARİH</th>
+    <th rowspan="2" class="h-base"            style="min-width:80px">ÇIKAN</th>
+    <th colspan="2" class="h-banka">BANKA (POS)</th>
+    <th colspan="2" class="h-nakit">NAKİT</th>
+    <th colspan="2" class="h-iade">İADE</th>
+    <th colspan="2" class="h-tahsil">TAHSİLAT</th>
+    <th rowspan="2" class="h-base"            style="min-width:88px">BANKA TOPLAM</th>
+    <th rowspan="2" class="h-base"            style="min-width:88px">NAKİT TOPLAM</th>
+    <th rowspan="2" class="h-base"            style="min-width:88px">GENEL TOPLAM</th>
+    <th colspan="3" class="h-rx">RX</th>
+    <th colspan="3" class="h-fark">FARK</th>
+    <th rowspan="2" class="h-base"            style="min-width:220px">NOT</th>
+  </tr>
+  <tr>
+    <th class="h-banka2" style="min-width:80px">TEB</th>
+    <th class="h-banka2" style="min-width:88px">VAKİFBANK</th>
+    <th class="h-nakit2" style="min-width:80px">GİRİŞ</th>
+    <th class="h-nakit2" style="min-width:80px">İBAN</th>
+    <th class="h-iade2"  style="min-width:80px">BANKA</th>
+    <th class="h-iade2"  style="min-width:80px">NAKİT</th>
+    <th class="h-tahsil2" style="min-width:80px">BANKA</th>
+    <th class="h-tahsil2" style="min-width:80px">NAKİT</th>
+    <th class="h-rx"     style="min-width:84px">BANKA</th>
+    <th class="h-rx"     style="min-width:84px">NAKİT</th>
+    <th class="h-rx"     style="min-width:84px">RX TOPLAM</th>
+    <th class="h-fark"   style="min-width:84px">BANKA</th>
+    <th class="h-fark"   style="min-width:84px">NAKİT</th>
+    <th class="h-fark"   style="min-width:84px">TOPLAM FARK</th>
+  </tr>
+</thead>
+<tbody id="tableBody"></tbody>
+<tfoot  id="tableFoot"></tfoot>
+</table>
+</div>
+
+<!-- RxEys Modal -->
+<div id="rxeysModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-icon">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="#1e40af"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+      </div>
+      <h2>RxEys Excel İçe Aktar</h2>
+    </div>
+
+    <div class="form-group">
+      <label>Excel Dosyası</label>
+      <label class="file-label" id="fileDropZone">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clip-rule="evenodd"/></svg>
+        <span id="fileText">Dosya seçmek için tıklayın (.xlsx)</span>
+        <input type="file" id="rxeysFile" accept=".xlsx,.xls" onchange="onFileChange(this)">
+      </label>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="previewRxEys()">Sütunları Tanı</button>
+
+    <div id="columnMapping" hidden>
+      <div class="divider"></div>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px;">RxEys sütunlarını eşleştirin:</p>
+      <div class="form-group"><label>Tarih Sütunu</label><select id="dateCol"></select></div>
+      <div class="form-group"><label>Banka Tahsilatı</label><select id="bankaCol"></select></div>
+      <div class="form-group"><label>Nakit Tahsilatı</label><select id="nakitCol"></select></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-neutral" onclick="closeRxEysModal()">İptal</button>
+      <button class="btn btn-success" id="importBtn" hidden onclick="importRxEys()">
+        <svg viewBox="0 0 20 20" fill="currentColor" style="width:15px;height:15px"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+        İçe Aktar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Watcher Modal -->
+<div id="watcherModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-icon">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="#1e40af"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+      </div>
+      <h2>Otomatik RxEys Senkronizasyonu</h2>
+    </div>
+
+    <div id="watcherStatus" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;font-size:.8rem;color:#475569;margin-bottom:14px;"></div>
+
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="watcherEnabled" style="width:16px;height:16px;cursor:pointer;">
+        <span>Otomatik senkronizasyonu etkinleştir</span>
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label>İzlenecek Klasör (RxEys / Google Drive)</label>
+      <input type="text" id="watcherFolder" class="inp-num" style="width:100%;font-size:.85rem;padding:8px 10px;" placeholder="Örn: C:\RxEys\Exports veya G:\Drive'ım\Yedek">
+      <p style="font-size:.75rem;color:var(--muted);margin-top:4px;">
+        RxEys Excel <b>veya .back</b> dosyalarının bulunduğu klasör.
+        Google Drive masaüstü uygulamasıyla senkronladığınız klasörü
+        (örn. <code>G:\Drive'ım\...</code>) seçerseniz .back yedekleri buradan otomatik çekilir.
+      </p>
+    </div>
+
+    <div class="form-group">
+      <label>Kontrol Sıklığı (dakika)</label>
+      <input type="number" id="watcherInterval" class="inp-num" min="1" max="60" value="5" style="width:100px;">
+    </div>
+
+    <div class="divider"></div>
+    <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px;">Sütun adları (Excel dosyasındaki başlıklar)</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin:0">
+        <label>Tarih</label>
+        <input type="text" id="watcherDateCol" class="inp-num" style="width:100%;font-size:.85rem;padding:6px 8px;" placeholder="Tarih">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Banka</label>
+        <input type="text" id="watcherBankaCol" class="inp-num" style="width:100%;font-size:.85rem;padding:6px 8px;" placeholder="Banka">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Nakit</label>
+        <input type="text" id="watcherNakitCol" class="inp-num" style="width:100%;font-size:.85rem;padding:6px 8px;" placeholder="Nakit">
+      </div>
+    </div>
+
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button class="btn btn-primary" onclick="triggerWatcherSync()" style="gap:6px;">
+        <svg viewBox="0 0 20 20" fill="currentColor" style="width:15px;height:15px"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+        Şimdi Tara
+      </button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-neutral" onclick="closeWatcherModal()">İptal</button>
+        <button class="btn btn-success" onclick="saveWatcherConfig()">
+          <svg viewBox="0 0 20 20" fill="currentColor" style="width:15px;height:15px"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+          Kaydet
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hide Modal -->
+<div id="hideModal" class="modal-overlay" hidden>
+  <div class="modal" style="width:min(520px,94vw);">
+    <div class="modal-header">
+      <div class="modal-icon">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="#1e40af"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+      </div>
+      <h2>Gün Gizleme</h2>
+    </div>
+
+    <div class="form-group">
+      <label>Gizlenecek hafta günleri</label>
+      <div class="weekday-toggles" id="weekdayToggles"></div>
+      <p style="font-size:.75rem;color:var(--muted);margin-top:6px;">Seçili günler her ay otomatik gizlenir (örn. Pazar).</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="form-group" style="margin-bottom:10px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;">
+        <input type="checkbox" id="showHiddenToggle" style="width:16px;height:16px;cursor:pointer;" onchange="toggleShowHidden(this.checked)">
+        <span>Gizli günleri tabloda göster (yönetmek için)</span>
+      </label>
+    </div>
+
+    <div id="hiddenDatesBox">
+      <label style="font-size:.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">Tarih bazlı gizlenenler</label>
+      <div id="hiddenDatesList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-neutral" onclick="closeHideModal()">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<!-- Formula Modal -->
+<div id="formulaModal" class="modal-overlay" hidden>
+  <div class="modal" style="width:min(560px,94vw);">
+    <div class="modal-header">
+      <div class="modal-icon">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="#1e40af"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+      </div>
+      <h2>Hesaplama Formülleri</h2>
+    </div>
+
+    <div class="formula-list">
+      <div class="formula-row">
+        <span class="formula-name">BANKA TOPLAM</span>
+        <code>teb + vakifbank − iade_banka − tahsilat_banka</code>
+      </div>
+      <div class="formula-row">
+        <span class="formula-name">NAKİT TOPLAM</span>
+        <code>nakit + iban − iade_nakit − tahsilat_nakit + cikan</code>
+      </div>
+      <div class="formula-row">
+        <span class="formula-name">GENEL TOPLAM</span>
+        <code>banka_top + nakit_top</code>
+      </div>
+      <div class="formula-row">
+        <span class="formula-name">RX TOPLAM</span>
+        <code>rx_banka + rx_nakit</code>
+      </div>
+      <div class="formula-row">
+        <span class="formula-name">FARK BANKA</span>
+        <code>banka_top − rx_banka</code>
+      </div>
+      <div class="formula-row">
+        <span class="formula-name">FARK NAKİT</span>
+        <code>nakit_top − rx_nakit</code>
+      </div>
+      <div class="formula-row">
+        <span class="formula-name">TOPLAM FARK</span>
+        <code>fark_banka + fark_nakit</code>
+      </div>
+    </div>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;font-size:.78rem;color:#475569;margin-top:14px;line-height:1.6;">
+      <b>Renk kuralları:</b> FARK &gt; 0 yeşil (kasada fazla), &lt; 0 kırmızı (eksik).
+      İBAN ve tahsilat dolu hücreler yeşil, iade hücreleri sarı vurgulanır.
+      <br><b>Not:</b> Çıkan = kasadan çıkan nakit (gider), elde görünmesi için nakit toplama eklenir.
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-neutral" onclick="closeFormulaModal()">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loadingOverlay" class="loading-overlay" hidden>
+  <div class="spinner"></div>
+  <div class="loading-text">Yükleniyor...</div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+const MONTHS  = ['','Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
+                 'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const TR_DAYS = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const state = {
+  year: new Date().getFullYear(),
+  month: new Date().getMonth() + 1,
+  entries: {},
+  holidays: new Set(),
+  saveTimers: {},
+  rxFileId: null,
+  hiddenWeekdays: new Set(),   // JS getDay(): 0=Paz .. 6=Cmt
+  hiddenDates: new Set(),       // 'YYYY-MM-DD'
+  showHidden: false,            // gizli günleri yönetim için göster
+};
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  document.getElementById('monthSelect').value = state.month;
+  document.getElementById('yearInput').value   = state.year;
+  loadMonth();
+});
+
+// ── Load ──────────────────────────────────────────────────────────────────────
+async function loadMonth() {
+  state.year  = parseInt(document.getElementById('yearInput').value, 10);
+  state.month = parseInt(document.getElementById('monthSelect').value, 10);
+  document.getElementById('monthLabel').textContent = `${MONTHS[state.month]} ${state.year}`;
+
+  setLoading(true);
+  try {
+    const [holR, entR, vcR] = await Promise.all([
+      fetch(`/api/holidays/${state.year}`),
+      fetch(`/api/entries/${state.year}/${state.month}`),
+      fetch(`/api/view-config`),
+    ]);
+    const vc = await vcR.json();
+    state.hiddenWeekdays = new Set((vc.hidden_weekdays || []).map(Number));
+    state.hiddenDates    = new Set(vc.hidden_dates || []);
+    state.holidays = new Set(await holR.json());
+    state.entries  = {};
+    for (const e of await entR.json()) state.entries[e.date] = e;
+
+    const numDays = new Date(state.year, state.month, 0).getDate();
+    for (let d = 1; d <= numDays; d++) {
+      const ds = ds_(state.year, state.month, d);
+      if (!state.entries[ds]) state.entries[ds] = empty(ds);
+    }
+    renderTable();
+  } catch (err) {
+    toast('Yükleme hatası: ' + err.message, 'error');
+  } finally { setLoading(false); }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderTable() {
+  const tbody   = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  const numDays = new Date(state.year, state.month, 0).getDate();
+  const tot     = emptyTot();
+
+  for (let day = 1; day <= numDays; day++) {
+    const ds  = ds_(state.year, state.month, day);
+    const d   = new Date(state.year, state.month - 1, day);
+
+    const byWeekday    = state.hiddenWeekdays.has(d.getDay());
+    const inHiddenDate = state.hiddenDates.has(ds);
+    const isHidden     = byWeekday || inHiddenDate;
+    // Gizli gün: ekranda yok, toplama girmez (showHidden açıkken yönetim için görünür)
+    if (isHidden && !state.showHidden) continue;
+
+    const v   = calc(state.entries[ds] || empty(ds));
+    if (!isHidden) addTot(tot, v);
+
+    const isWkd = d.getDay() === 0 || d.getDay() === 6;
+    const isHol = state.holidays.has(ds);
+    const lbl   = `${pad(day)}.${pad(state.month)}.${TR_DAYS[d.getDay()]}`;
+
+    let hideBtn;
+    if (inHiddenDate)      hideBtn = `<button class="hide-btn unhide" title="Bu günü göster" onclick="unhideDate('${ds}')">↩</button>`;
+    else if (byWeekday)    hideBtn = `<span class="hide-tag" title="Hafta günü gizli (ayarlardan)">gizli</span>`;
+    else                   hideBtn = `<button class="hide-btn" title="Bu günü gizle" onclick="hideDate('${ds}')">×</button>`;
+
+    const tr = document.createElement('tr');
+    tr.dataset.date = ds;
+    const cls = isHol ? 'holiday' : isWkd ? 'weekend' : (day % 2 === 0 ? 'even' : '');
+    tr.className = (cls + (isHidden ? ' row-hidden' : '')).trim();
+
+    tr.innerHTML = `
+      <td class="date-cell sticky-col"><span class="date-lbl">${lbl}</span>${hideBtn}</td>
+      <td class="input-cell"><input class="num-input" data-field="cikan"      value="${fmt(v.cikan)}"></td>
+      <td class="input-cell"><input class="num-input" data-field="teb"        value="${fmt(v.teb)}"></td>
+      <td class="input-cell"><input class="num-input" data-field="vakifbank"  value="${fmt(v.vakifbank)}"></td>
+      <td class="input-cell"><input class="num-input" data-field="nakit"      value="${fmt(v.nakit)}"></td>
+      <td class="input-cell${v.iban       > 0.005 ? ' iban-active'   : ''}"><input class="num-input" data-field="iban"       value="${fmt(v.iban)}"></td>
+      <td class="input-cell${v.iade_banka > 0.005 ? ' iade-active'   : ''}"><input class="num-input" data-field="iade_banka" value="${fmt(v.iade_banka)}"></td>
+      <td class="input-cell${v.iade_nakit > 0.005 ? ' iade-active'   : ''}"><input class="num-input" data-field="iade_nakit" value="${fmt(v.iade_nakit)}"></td>
+      <td class="input-cell${v.tahsilat_banka > 0.005 ? ' tahsilat-active' : ''}"><input class="num-input" data-field="tahsilat_banka" value="${fmt(v.tahsilat_banka)}"></td>
+      <td class="input-cell${v.tahsilat_nakit > 0.005 ? ' tahsilat-active' : ''}"><input class="num-input" data-field="tahsilat_nakit" value="${fmt(v.tahsilat_nakit)}"></td>
+      <td class="calc-cell"  data-k="banka_top">${fmt(v.banka_top)}</td>
+      <td class="calc-cell"  data-k="nakit_top">${fmt(v.nakit_top)}</td>
+      <td class="calc-cell"  data-k="genel_top">${fmt(v.genel_top)}</td>
+      <td class="input-cell rx-inp-cell"><input class="num-input" data-field="rx_banka" value="${fmt(v.rx_banka)}"></td>
+      <td class="input-cell rx-inp-cell"><input class="num-input" data-field="rx_nakit" value="${fmt(v.rx_nakit)}"></td>
+      <td class="calc-cell"  data-k="rx_top">${fmt(v.rx_top)}</td>
+      <td class="fark-cell ${fCls(v.fark_banka)}"  data-k="fark_banka">${fmt(v.fark_banka)}</td>
+      <td class="fark-cell ${fCls(v.fark_nakit)}"  data-k="fark_nakit">${fmt(v.fark_nakit)}</td>
+      <td class="fark-cell ${fCls(v.toplam_fark)}" data-k="toplam_fark">${fmt(v.toplam_fark)}</td>
+      <td class="input-cell notes-cell"><textarea class="notes-input" data-field="notes" rows="1">${esc(v.notes)}</textarea></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  renderFoot(tot);
+  bindEvents();
+}
+
+function renderFoot(t) {
+  document.getElementById('tableFoot').innerHTML = `
+    <tr class="total-row">
+      <td class="sticky-col">TOPLAM</td>
+      <td>${fmt(t.cikan)}</td><td>${fmt(t.teb)}</td><td>${fmt(t.vakifbank)}</td>
+      <td>${fmt(t.nakit)}</td><td>${fmt(t.iban)}</td>
+      <td>${fmt(t.iade_banka)}</td><td>${fmt(t.iade_nakit)}</td>
+      <td>${fmt(t.tahsilat_banka)}</td><td>${fmt(t.tahsilat_nakit)}</td>
+      <td>${fmt(t.banka_top)}</td><td>${fmt(t.nakit_top)}</td><td>${fmt(t.genel_top)}</td>
+      <td>${fmt(t.rx_banka)}</td><td>${fmt(t.rx_nakit)}</td><td>${fmt(t.rx_top)}</td>
+      <td class="fark-cell ${fCls(t.fark_banka)}">${fmt(t.fark_banka)}</td>
+      <td class="fark-cell ${fCls(t.fark_nakit)}">${fmt(t.fark_nakit)}</td>
+      <td class="fark-cell ${fCls(t.toplam_fark)}">${fmt(t.toplam_fark)}</td>
+      <td></td>
+    </tr>`;
+}
+
+function bindEvents() {
+  document.querySelectorAll('#tableBody .num-input').forEach(inp => {
+    inp.addEventListener('focus',   () => inp.select());
+    inp.addEventListener('change',  onNum);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); });
+  });
+  document.querySelectorAll('#tableBody .notes-input').forEach(inp => {
+    autoGrow(inp);                                   // ilk yüklemede yüksekliği ayarla
+    inp.addEventListener('input',  () => autoGrow(inp));
+    inp.addEventListener('change', onNote);
+  });
+}
+
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+// ── Handlers ──────────────────────────────────────────────────────────────────
+function onNum(ev) {
+  const inp = ev.target, tr = inp.closest('tr');
+  const ds = tr.dataset.date, fld = inp.dataset.field;
+  const val = parseNum(inp.value);
+  inp.value = fmt(val);
+  state.entries[ds][fld] = val;
+  const v = calc(state.entries[ds]);
+  tr.querySelectorAll('[data-k]').forEach(cell => {
+    const k = cell.dataset.k;
+    cell.textContent = fmt(v[k]);
+    if (cell.classList.contains('fark-cell')) {
+      cell.className = `fark-cell ${fCls(v[k])}`; cell.dataset.k = k;
+    }
+  });
+  // Koşullu hücre renkleri canlı güncelle
+  const _colorMap = {
+    tahsilat_banka: 'tahsilat-active', tahsilat_nakit: 'tahsilat-active',
+    iban:           'iban-active',
+    iade_nakit:     'iade-active',     iade_banka:     'iade-active',
+  };
+  for (const [field, cls] of Object.entries(_colorMap)) {
+    const inp = tr.querySelector(`[data-field="${field}"]`);
+    if (inp) inp.closest('td').classList.toggle(cls, parseNum(inp.value) > 0.005);
+  }
+  refreshFoot();
+  sched(ds);
+}
+
+function onNote(ev) {
+  const inp = ev.target, ds = inp.closest('tr').dataset.date;
+  state.entries[ds].notes = inp.value;
+  sched(ds);
+}
+
+function isDayHidden(ds, d) {
+  return state.hiddenWeekdays.has(d.getDay()) || state.hiddenDates.has(ds);
+}
+
+function refreshFoot() {
+  const t = emptyTot();
+  const numDays = new Date(state.year, state.month, 0).getDate();
+  for (let day = 1; day <= numDays; day++) {
+    const ds = ds_(state.year, state.month, day);
+    const d  = new Date(state.year, state.month - 1, day);
+    if (isDayHidden(ds, d)) continue;
+    addTot(t, calc(state.entries[ds] || empty(ds)));
+  }
+  renderFoot(t);
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+function sched(ds) {
+  clearTimeout(state.saveTimers[ds]);
+  state.saveTimers[ds] = setTimeout(() => saveEntry(ds), 700);
+}
+
+async function saveEntry(ds) {
+  setSavePill('saving', 'Kaydediliyor...');
+  try {
+    const r = await fetch('/api/entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state.entries[ds]),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    setSavePill('saved', 'Kaydedildi ✓');
+  } catch (err) {
+    setSavePill('error', 'Hata ✗');
+    toast('Kayıt hatası: ' + err.message, 'error');
+  }
+}
+
+// ── RxEys ────────────────────────────────────────────────────────────────────
+function onFileChange(inp) {
+  document.getElementById('fileText').textContent = inp.files[0]?.name || 'Dosya seçmek için tıklayın (.xlsx)';
+}
+
+function openRxEysModal() {
+  document.getElementById('rxeysModal').hidden    = false;
+  document.getElementById('columnMapping').hidden = true;
+  document.getElementById('importBtn').hidden     = true;
+  document.getElementById('rxeysFile').value      = '';
+  document.getElementById('fileText').textContent = 'Dosya seçmek için tıklayın (.xlsx)';
+  state.rxFileId = null;
+}
+function closeRxEysModal() { document.getElementById('rxeysModal').hidden = true; }
+
+async function previewRxEys() {
+  const file = document.getElementById('rxeysFile').files[0];
+  if (!file) { toast('Lütfen dosya seçin', 'error'); return; }
+  const fd = new FormData(); fd.append('file', file);
+  setLoading(true);
+  try {
+    const r = await fetch('/api/preview-rxeys', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (!r.ok) { toast(d.error || 'Hata', 'error'); return; }
+    state.rxFileId = d.file_id;
+    const mkO = cols => cols.map(c => `<option value="${esc(c)}">${c}</option>`).join('');
+    ['dateCol','bankaCol','nakitCol'].forEach(id => document.getElementById(id).innerHTML = mkO(d.columns));
+    autoSel('dateCol',  ['tarih','date','TARİH','Tarih']);
+    autoSel('bankaCol', ['banka','BANKA','Banka','banka tahsilatı','kredi kartı']);
+    autoSel('nakitCol', ['nakit','NAKİT','Nakit','nakit tahsilatı','cash']);
+    document.getElementById('columnMapping').hidden = false;
+    document.getElementById('importBtn').hidden     = false;
+  } catch (err) { toast('Hata: ' + err.message, 'error'); }
+  finally { setLoading(false); }
+}
+
+function autoSel(id, cands) {
+  const sel = document.getElementById(id);
+  const opts = Array.from(sel.options).map(o => o.value);
+  for (const c of cands) {
+    const m = opts.find(o => o.toLowerCase() === c.toLowerCase())
+           || opts.find(o => o.toLowerCase().includes(c.toLowerCase()));
+    if (m) { sel.value = m; return; }
+  }
+}
+
+async function importRxEys() {
+  const payload = {
+    file_id:   state.rxFileId,
+    date_col:  document.getElementById('dateCol').value,
+    banka_col: document.getElementById('bankaCol').value,
+    nakit_col: document.getElementById('nakitCol').value,
+  };
+  setLoading(true);
+  try {
+    const r = await fetch('/api/import-rxeys', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const d = await r.json();
+    if (!r.ok) { toast(d.error || 'Hata', 'error'); return; }
+    closeRxEysModal();
+    toast(`${d.imported} günlük RxEys verisi aktarıldı`, 'success');
+    await loadMonth();
+  } catch (err) { toast('Hata: ' + err.message, 'error'); }
+  finally { setLoading(false); }
+}
+
+function exportExcel() { window.location.href = `/api/export/${state.year}/${state.month}`; }
+
+// ── .back import ─────────────────────────────────────────────────────────────
+async function importBackFile(inp) {
+  const file = inp.files[0];
+  if (!file) return;
+  inp.value = '';
+  const fd = new FormData();
+  fd.append('file', file);
+  setLoading(true);
+  try {
+    const r = await fetch('/api/import-back', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (!r.ok) { toast(d.error || 'Hata', 'error'); return; }
+    toast(`${d.imported} günlük RxEys verisi aktarıldı (.back)`, 'success');
+    await loadMonth();
+  } catch (e) { toast('Hata: ' + e.message, 'error'); }
+  finally { setLoading(false); }
+}
+
+// ── Watcher ──────────────────────────────────────────────────────────────────
+async function openWatcherModal() {
+  const [cfgR, stR] = await Promise.all([
+    fetch('/api/watcher/config'),
+    fetch('/api/watcher/status'),
+  ]);
+  const cfg = await cfgR.json();
+  const st  = await stR.json();
+
+  document.getElementById('watcherEnabled').checked  = cfg.enabled;
+  document.getElementById('watcherFolder').value     = cfg.watch_folder;
+  document.getElementById('watcherInterval').value   = cfg.interval_minutes;
+  document.getElementById('watcherDateCol').value    = cfg.date_col;
+  document.getElementById('watcherBankaCol').value   = cfg.banka_col;
+  document.getElementById('watcherNakitCol').value   = cfg.nakit_col;
+
+  _renderWatcherStatus(st);
+  document.getElementById('watcherModal').hidden = false;
+}
+
+function closeWatcherModal() { document.getElementById('watcherModal').hidden = true; }
+
+// ── Formula modal ─────────────────────────────────────────────────────────────
+function openFormulaModal()  { document.getElementById('formulaModal').hidden = false; }
+function closeFormulaModal() { document.getElementById('formulaModal').hidden = true; }
+
+// ── Gün gizleme ───────────────────────────────────────────────────────────────
+// Hafta günü etiketleri, getDay() sırasına göre: 0=Paz .. 6=Cmt
+const WD_LABELS = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+const WD_ORDER  = [1,2,3,4,5,6,0];   // gösterim sırası: Pzt..Paz
+
+function openHideModal() {
+  document.getElementById('showHiddenToggle').checked = state.showHidden;
+  renderWeekdayToggles();
+  renderHiddenDatesList();
+  document.getElementById('hideModal').hidden = false;
+}
+function closeHideModal() { document.getElementById('hideModal').hidden = true; }
+
+function renderWeekdayToggles() {
+  const box = document.getElementById('weekdayToggles');
+  box.innerHTML = WD_ORDER.map(wd => {
+    const on = state.hiddenWeekdays.has(wd);
+    return `<button type="button" class="wd-toggle${on ? ' on' : ''}" onclick="toggleWeekday(${wd})">${WD_LABELS[wd]}</button>`;
+  }).join('');
+}
+
+function renderHiddenDatesList() {
+  const box = document.getElementById('hiddenDatesList');
+  const dates = [...state.hiddenDates].sort();
+  if (!dates.length) {
+    box.innerHTML = '<span style="font-size:.8rem;color:var(--muted);">Tarih bazlı gizlenen gün yok. Tablodaki × ile gizleyebilirsiniz.</span>';
+    return;
+  }
+  box.innerHTML = dates.map(ds => `
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid var(--border);border-radius:7px;padding:6px 10px;">
+      <span style="font-size:.82rem;">${ds}</span>
+      <button class="btn btn-neutral" style="height:26px;padding:0 10px;font-size:.75rem;" onclick="unhideDate('${ds}')">↩ Göster</button>
+    </div>`).join('');
+}
+
+function toggleWeekday(wd) {
+  if (state.hiddenWeekdays.has(wd)) state.hiddenWeekdays.delete(wd);
+  else state.hiddenWeekdays.add(wd);
+  saveViewConfig();
+  renderWeekdayToggles();
+  renderTable();
+}
+
+function hideDate(ds) {
+  state.hiddenDates.add(ds);
+  saveViewConfig();
+  renderTable();
+}
+
+function unhideDate(ds) {
+  state.hiddenDates.delete(ds);
+  saveViewConfig();
+  renderHiddenDatesList();
+  renderTable();
+}
+
+function toggleShowHidden(on) {
+  state.showHidden = on;
+  renderTable();
+}
+
+async function saveViewConfig() {
+  try {
+    await fetch('/api/view-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        hidden_weekdays: [...state.hiddenWeekdays],
+        hidden_dates:    [...state.hiddenDates],
+      }),
+    });
+  } catch (e) { toast('Gizleme ayarı kaydedilemedi', 'error'); }
+}
+
+function _renderWatcherStatus(st) {
+  const box = document.getElementById('watcherStatus');
+  const syncTime = st.last_sync
+    ? new Date(st.last_sync).toLocaleString('tr-TR')
+    : 'Henüz taranmadı';
+  const errHtml = st.last_error
+    ? `<div style="color:#b91c1c;margin-top:4px;">⚠ ${st.last_error}</div>` : '';
+  box.innerHTML =
+    `<div style="display:flex;gap:16px;flex-wrap:wrap;">
+       <span>🕐 Son tarama: <b>${syncTime}</b></span>
+       ${st.last_file ? `<span>📄 Son dosya: <b>${st.last_file}</b> (${st.last_imported} gün)</span>` : ''}
+       <span>📊 Toplam aktarılan: <b>${st.total_synced} gün</b></span>
+     </div>${errHtml}`;
+}
+
+async function saveWatcherConfig() {
+  const cfg = {
+    enabled:          document.getElementById('watcherEnabled').checked,
+    watch_folder:     document.getElementById('watcherFolder').value.trim(),
+    interval_minutes: parseInt(document.getElementById('watcherInterval').value) || 5,
+    date_col:         document.getElementById('watcherDateCol').value.trim() || 'Tarih',
+    banka_col:        document.getElementById('watcherBankaCol').value.trim() || 'Banka',
+    nakit_col:        document.getElementById('watcherNakitCol').value.trim() || 'Nakit',
+  };
+  const r = await fetch('/api/watcher/config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cfg),
+  });
+  if (r.ok) {
+    toast('Ayarlar kaydedildi', 'success');
+    closeWatcherModal();
+    _updateWatcherDot();
+  } else {
+    toast('Kayıt hatası', 'error');
+  }
+}
+
+async function triggerWatcherSync() {
+  const btn = document.querySelector('#watcherModal .btn-primary');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/watcher/sync', { method: 'POST' });
+    const d = await r.json();
+    if (!r.ok) { toast(d.error || 'Hata', 'error'); return; }
+    const msg = d.imported > 0
+      ? `${d.imported} yeni gün aktarıldı`
+      : 'Yeni dosya bulunamadı';
+    toast(msg, d.imported > 0 ? 'success' : 'info');
+    const stR = await fetch('/api/watcher/status');
+    _renderWatcherStatus(await stR.json());
+    if (d.imported > 0) await loadMonth();
+  } catch(e) { toast('Hata: ' + e.message, 'error'); }
+  finally { btn.disabled = false; }
+}
+
+async function _updateWatcherDot() {
+  try {
+    const [cfgR, stR] = await Promise.all([
+      fetch('/api/watcher/config'),
+      fetch('/api/watcher/status'),
+    ]);
+    const cfg = await cfgR.json();
+    const st  = await stR.json();
+    const dot = document.getElementById('watcherDot');
+    if (cfg.enabled && cfg.watch_folder) {
+      dot.style.background = st.last_error ? '#f59e0b' : '#22c55e';
+      dot.title = st.last_sync ? 'Son: ' + new Date(st.last_sync).toLocaleString('tr-TR') : 'Aktif';
+    } else {
+      dot.style.background = '#6b7280';
+      dot.title = 'Pasif';
+    }
+  } catch(_) {}
+}
+
+// Poll watcher dot every 30s
+setInterval(_updateWatcherDot, 30000);
+window.addEventListener('load', () => { _updateWatcherDot(); });
+
+// ── Calc ──────────────────────────────────────────────────────────────────────
+function calc(e) {
+  const cikan=+e.cikan||0, teb=+e.teb||0, vakifbank=+e.vakifbank||0,
+        nakit=+e.nakit||0, iban=+e.iban||0,
+        iade_nakit=+e.iade_nakit||0, iade_banka=+e.iade_banka||0,
+        tahsilat_banka=+e.tahsilat_banka||0, tahsilat_nakit=+e.tahsilat_nakit||0,
+        rx_banka=+e.rx_banka||0, rx_nakit=+e.rx_nakit||0;
+  const banka_top=teb+vakifbank-iade_banka-tahsilat_banka,
+        nakit_top=nakit+iban-iade_nakit-tahsilat_nakit+cikan,
+        genel_top=banka_top+nakit_top, rx_top=rx_banka+rx_nakit;
+  const fark_banka = banka_top - rx_banka;
+  const fark_nakit = nakit_top - rx_nakit;
+  return { ...e, cikan,teb,vakifbank,nakit,iban,iade_nakit,iade_banka,
+           tahsilat_banka,tahsilat_nakit,rx_banka,rx_nakit,
+           banka_top, nakit_top, genel_top, rx_top,
+           fark_banka, fark_nakit,
+           toplam_fark: fark_banka + fark_nakit,
+           notes: e.notes||'' };
+}
+
+function empty(ds) { return {date:ds,cikan:0,teb:0,vakifbank:0,nakit:0,iban:0,iade_nakit:0,iade_banka:0,tahsilat_banka:0,tahsilat_nakit:0,rx_banka:0,rx_nakit:0,notes:''}; }
+function emptyTot() { return {cikan:0,teb:0,vakifbank:0,banka_top:0,nakit:0,iban:0,iade_nakit:0,iade_banka:0,tahsilat_banka:0,tahsilat_nakit:0,nakit_top:0,genel_top:0,rx_banka:0,rx_nakit:0,rx_top:0,fark_banka:0,fark_nakit:0,toplam_fark:0}; }
+function addTot(t,v) { for (const k of Object.keys(t)) t[k]+=v[k]||0; }
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function ds_(y,m,d) { return `${y}-${pad(m)}-${pad(d)}`; }
+function pad(n)     { return String(n).padStart(2,'0'); }
+const _nf = new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function fmt(n) { return _nf.format(+n||0); }
+function parseNum(s) {
+  if (!s && s!==0) return 0;
+  s=String(s).replace(/₺/g,'').replace(/\s/g,'').trim();
+  if (!s||s==='-') return 0;
+  if (s.includes(',')&&s.includes('.')) s=s.replace(/\./g,'').replace(',','.');
+  else if (s.includes(',')) s=s.replace(',','.');
+  return parseFloat(s)||0;
+}
+function fCls(v) {
+  const n=+v||0;
+  if (n<-0.005) return 'fark-neg';
+  if (n> 0.005) return 'fark-pos';
+  return 'fark-zero';
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── UI feedback ───────────────────────────────────────────────────────────────
+let _spT;
+function setSavePill(type, msg) {
+  const el=document.getElementById('savePill');
+  el.className='save-pill '+type; el.textContent=msg;
+  clearTimeout(_spT);
+  if (type!=='saving') _spT=setTimeout(()=>{el.textContent='';el.className='save-pill';},2500);
+}
+
+function toast(msg, type='info') {
+  const el=document.createElement('div');
+  const icons={success:'✓',error:'✕',info:'ℹ'};
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span class="toast-icon">${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(()=>el.remove(),4000);
+}
+
+function setLoading(on) { document.getElementById('loadingOverlay').hidden=!on; }
+</script>
+</body>
+</html>
