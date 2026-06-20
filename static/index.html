@@ -39,6 +39,8 @@
 
   --fark-pos-bg:  #dcfce7; --fark-pos-txt: #14532d;
   --fark-neg-bg:  #fee2e2; --fark-neg-txt: #7f1d1d;
+  --tahsil-tot-bg: #fbbf24; --tahsil-tot-txt: #1c1917;
+  --tahsil-tot-border: #d97706;
 
   --radius: 10px;
   --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.06);
@@ -231,6 +233,22 @@ th.h-fark    { background: var(--h2-bg);  color: #e2e8f0; }
 .main-table tfoot .total-row .fark-pos { background: #166534; color: #bbf7d0; }
 .main-table tfoot .total-row .fark-neg { background: #7f1d1d; color: #fecaca; }
 .main-table tfoot .total-row .fark-zero { background: #1e3a6e; color: #94a3b8; }
+
+/* Tahsilat toplam — toplam dışında tutulur, göze çarpsın */
+.main-table tfoot .total-row .tahsil-toplam {
+  background: var(--tahsil-tot-bg) !important;
+  color: var(--tahsil-tot-txt) !important;
+  border: 2px solid var(--tahsil-tot-border) !important;
+  font-size: .8rem;
+  position: relative;
+}
+.main-table tfoot .total-row .tahsil-toplam::after {
+  content: '⚠';
+  position: absolute;
+  top: 2px; right: 3px;
+  font-size: .58rem;
+  opacity: .7;
+}
 
 /* ── Modal ── */
 .modal-overlay {
@@ -621,11 +639,11 @@ th.h-fark    { background: var(--h2-bg);  color: #e2e8f0; }
     <div class="formula-list">
       <div class="formula-row">
         <span class="formula-name">BANKA TOPLAM</span>
-        <code>teb + vakifbank − iade_banka − tahsilat_banka</code>
+        <code>teb + vakifbank − iade_banka</code>
       </div>
       <div class="formula-row">
         <span class="formula-name">NAKİT TOPLAM</span>
-        <code>nakit + iban − iade_nakit − tahsilat_nakit + cikan</code>
+        <code>nakit + iban − iade_nakit + cikan</code>
       </div>
       <div class="formula-row">
         <span class="formula-name">GENEL TOPLAM</span>
@@ -653,6 +671,7 @@ th.h-fark    { background: var(--h2-bg);  color: #e2e8f0; }
       <b>Renk kuralları:</b> FARK &gt; 0 yeşil (kasada fazla), &lt; 0 kırmızı (eksik).
       İBAN ve tahsilat dolu hücreler yeşil, iade hücreleri sarı vurgulanır.
       <br><b>Not:</b> Çıkan = kasadan çıkan nakit (gider), elde görünmesi için nakit toplama eklenir.
+      <br><b>Tahsilat:</b> BANKA ve NAKİT TOPLAM hesaplamalarına <u>dahil edilmez</u>; TOPLAM satırında <span style="background:#fbbf24;color:#1c1917;padding:1px 5px;border-radius:3px;font-weight:700;">sarı</span> olarak ayrıca gösterilir.
     </div>
 
     <div class="modal-actions">
@@ -797,7 +816,8 @@ function renderFoot(t) {
       <td>${fmt(t.cikan)}</td><td>${fmt(t.teb)}</td><td>${fmt(t.vakifbank)}</td>
       <td>${fmt(t.nakit)}</td><td>${fmt(t.iban)}</td>
       <td>${fmt(t.iade_banka)}</td><td>${fmt(t.iade_nakit)}</td>
-      <td>${fmt(t.tahsilat_banka)}</td><td>${fmt(t.tahsilat_nakit)}</td>
+      <td class="tahsil-toplam" title="Tahsilat toplama dahil edilmez">${fmt(t.tahsilat_banka)}</td>
+      <td class="tahsil-toplam" title="Tahsilat toplama dahil edilmez">${fmt(t.tahsilat_nakit)}</td>
       <td>${fmt(t.banka_top)}</td><td>${fmt(t.nakit_top)}</td><td>${fmt(t.genel_top)}</td>
       <td>${fmt(t.rx_banka)}</td><td>${fmt(t.rx_nakit)}</td><td>${fmt(t.rx_top)}</td>
       <td class="fark-cell ${fCls(t.fark_banka)}">${fmt(t.fark_banka)}</td>
@@ -1169,8 +1189,8 @@ function calc(e) {
         iade_nakit=+e.iade_nakit||0, iade_banka=+e.iade_banka||0,
         tahsilat_banka=+e.tahsilat_banka||0, tahsilat_nakit=+e.tahsilat_nakit||0,
         rx_banka=+e.rx_banka||0, rx_nakit=+e.rx_nakit||0;
-  const banka_top=teb+vakifbank-iade_banka-tahsilat_banka,
-        nakit_top=nakit+iban-iade_nakit-tahsilat_nakit+cikan,
+  const banka_top=teb+vakifbank-iade_banka,
+        nakit_top=nakit+iban-iade_nakit+cikan,
         genel_top=banka_top+nakit_top, rx_top=rx_banka+rx_nakit;
   const fark_banka = banka_top - rx_banka;
   const fark_nakit = nakit_top - rx_nakit;
